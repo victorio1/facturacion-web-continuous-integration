@@ -1,0 +1,24 @@
+# spring.profiles.active: dev
+server:
+  port: 9999
+
+spring:
+  datasource:
+    driver-class-name: "com.mysql.jdbc.Driver"
+    url: "jdbc:mysql://192.168.1.25:3306/facturacion-web?allowPublicKeyRetrieval=true&useSSL=false"
+    username: root
+    password: admin.2020
+    testWhileIdle: true
+    validationQuery: SELECT 1
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+      naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL5Dialect
+  flyway:
+    enabled: false
+

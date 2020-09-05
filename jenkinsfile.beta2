@@ -1,0 +1,129 @@
+def IP_SERVIDOR = "192.168.1.25"
+def URL_REPOSITORIO_GIT = "https://github.com/agilelearningperu/devops.git"
+def remote = [:]
+
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven 3.6.3'
+        jdk 'jdk8'
+    }
+
+    stages {
+        stage('Initialize') {
+            steps {
+                sh '''
+                    echo "PATH = ${PATH}"
+                    echo "M2_HOME = ${M2_HOME}"             
+                '''
+            }
+        }
+
+        stage('Descargar Fuentes') {
+            steps {
+                echo 'Descargando fuentes...'
+                git credentialsId: 'git-devops', url: "${URL_REPOSITORIO_GIT}"
+            }
+        }
+        stage('Compilar') {
+            steps {
+                echo 'Compilando...'
+                sh 'mvn -f pom.xml clean compile'
+            }
+        }
+
+        stage('Pruebas Unitarias') {
+            steps {
+                echo 'Ejecutando pruebas unitarias...'
+                sh 'mvn -f pom.xml test'
+                junit '**/target/surefire-reports/*.xml'
+            }
+        }
+
+        stage('Pruebas Integración') {
+            steps {
+                echo 'Ejecutando pruebas integración...'
+                sh 'mvn -f pom.xml verify -DskipUTs=true -Dspring.profiles.active=test'
+                junit '**/target/failsafe-reports/*.xml'
+            }
+        }
+
+        stage('Análisis Estático con SonarQube') {
+            steps {
+                echo 'Análisis Estático con SonarQube...'
+
+                withSonarQubeEnv('sonar-devops') {
+                    sh "mvn -f pom.xml sonar:sonar -Dsonar.host.url=http://${IP_SERVIDOR}:9000"
+                }
+
+            }
+
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Generando build...'
+                sh 'mvn -f pom.xml package -DskipTests=true'
+            }
+        }
+
+        stage('Versionar Artifactory') {
+            steps {
+                echo 'Versionando en Artifactory...'
+
+                rtServer(
+                        id: 'artifactory-devops',
+                        url: "http://${IP_SERVIDOR}:8081/artifactory",
+                        credentialsId: 'artifactory'
+                )
+
+                rtUpload(
+                        serverId: 'artifactory-devops',
+                        spec: '''{
+				          "files": [
+				            {
+				              "pattern": "target/*.jar",
+				              "target": "facturacion-web/desarrollo/${BUILD_NUMBER}/",
+				              "props": "pruebas-unitarias=si;pruebas-integracion=si;analisis-codigo-estatico=si"
+				            }
+				         ]
+				    }'''
+                )
+            }
+        }
+
+        stage('Descargar build') {
+            steps {
+                rtDownload(
+                        serverId: 'artifactory-devops',
+                        spec: '''{
+				          "files": [
+				            {
+				              "pattern": "facturacion-web/desarrollo/${BUILD_NUMBER}/",
+				              "target": "artifactory/"
+				            }
+				          ]
+				    }'''
+                )
+            }
+        }
+
+        stage('Desplegar') {
+            steps {
+                echo 'Desplegar applicativo'
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'devops', passwordVariable: 'pwd', usernameVariable: 'user')]) {
+                        remote.name = 'test'
+                        remote.host = '192.168.1.25'
+                        remote.user = user
+                        remote.password = pwd
+                        remote.allowAnyHosts = true
+                    sshPut remote: remote, from: "artifactory/desarrollo/${BUILD_NUMBER}/facturacion-web-0.0.1-SNAPSHOT.jar", into: '/home/devops/deploy/'
+                }
+                }
+            }
+
+        }
+    }
+}
