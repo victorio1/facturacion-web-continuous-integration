@@ -46,6 +46,8 @@ pipeline{
 
             steps{
                 echo 'Execute Unit Tests'
+                sh 'mvn -f pom.xml test'
+                junit '**/target/surefire-reports/*.xml'
             }
 
         }
