@@ -52,6 +52,17 @@ pipeline{
 
         }
 
+        stage('Integration Tests'){
+
+            steps{
+
+                echo 'Execute Integration Tests'
+                sh 'mvn -f pom.xml verify -DskipUTs=true -Dspring.profiles.active=test'
+                junit '**/target/failsafe-reports/*.xml'
+
+            }
+
+        }
 
     }
 
