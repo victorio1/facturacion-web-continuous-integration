@@ -10,6 +10,7 @@ pipeline{
     }
 
     stages{
+
         stage('Initialize'){
 
             steps{
@@ -28,6 +29,23 @@ pipeline{
             steps{
                 echo 'Descargando fuentes....'
                 git credentialsId: 'git-devops', url: "${URL_REPOSITORIO_GIT}"
+            }
+
+        }
+
+        stage('Building'){
+
+            steps{
+                echo 'Building....'
+                sh 'mvn -f pom.xml clean compile'
+            }
+
+        }
+
+        stage('Unit Tests'){
+
+            steps{
+                echo 'Execute Unit Tests'
             }
 
         }
