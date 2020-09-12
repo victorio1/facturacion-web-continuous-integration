@@ -104,6 +104,22 @@ pipeline{
             }
         }
 
+        stage('Descargar Build'){
+            steps{
+                echo 'Descargando empaquetado...'
+                rtDownload(
+                        serverId: 'artifactory-devops',
+                        spec:'''{
+                              "files":[{
+                                   "pattern": "facturacion-web/certificacion/${BUILD_NUMBER}/",
+                                   "target": "artifactory/"
+                              }]
+                              }'''
+                )
+
+            }
+
+        }
 
     }
 
