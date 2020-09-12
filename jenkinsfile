@@ -73,6 +73,16 @@ pipeline{
             }
         }
 
+        stage('Build'){
+            steps{
+                echo 'Generando build...'
+                sh 'mvn -f pom.xml package -DskipTests=true'
+
+            }
+
+
+        }
+
     }
 
 }
