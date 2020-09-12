@@ -64,6 +64,15 @@ pipeline{
 
         }
 
+        stage('Analysis SonarQube'){
+            steps{
+                echo 'Executing Analyst code static'
+                withSonarQubeEnv('sonar-devops'){
+                    sh "mvn -f pom.xml sonar:sonar -Dsonar.host.url=http://${IP_SERVIDOR}:9000"
+                }
+            }
+        }
+
     }
 
 }
