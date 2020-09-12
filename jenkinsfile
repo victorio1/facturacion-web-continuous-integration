@@ -107,18 +107,31 @@ pipeline{
         stage('Descargar Build'){
             steps{
                 echo 'Descargando empaquetado...'
+
                 rtDownload(
                         serverId: 'artifactory-devops',
                         spec:'''{
                               "files":[{
-                                   "pattern": "facturacion-web/certificacion/${BUILD_NUMBER}/",
-                                   "target": "artifactory/"
+                              "pattern": "facturacion-web/certificacion/${BUILD_NUMBER}/",
+                              "target": "artifactory/"
                               }]
                               }'''
                 )
-
             }
+        }
 
+        stage('Desplegar QA'){
+            steps{
+                withCredentials([usernamePassword(credentialsId:'devops', passwordVariable:'pwd',usernameVariable: 'user')]){
+                    remote.name='qa'
+                    remote.host='192.168.1.11'
+                    remote.user=user
+                    remote.password=pwd
+                    remote.allowAnyHosts=true
+
+                    sshPut remote: remote, from: "artifactory/certificacion/${BUILD_NUMBER}/facturacion-web-0.0.1-SNAPSHOT.jar", into: '/home/devops/deploy'
+                }
+            }
         }
 
     }
