@@ -77,11 +77,33 @@ pipeline{
             steps{
                 echo 'Generando build...'
                 sh 'mvn -f pom.xml package -DskipTests=true'
-
             }
-
-
         }
+
+        stage('Versionar Empaquetador'){
+
+            steps{
+                echo 'Versionando Empaquetado'
+
+                rtServer(
+                        id: 'artifactory-devops',
+                        url: "http://${IP_SERVIDOR}:8081/artifactory",
+                        credentialsId: 'artifactory'
+                )
+
+                rtUpload(
+                        serverId: 'artifactory-devops',
+                        spec:'''{
+                              "files":[{
+                                    "pattern": "target/*.jar",
+                                    "target": "facturacion-web/certificacion/${BUILD_NUMBER}/",
+                                    "props": "pruebas-unitarias=si;pruebas-integracion=si;analisis-codigo-estatico=si"
+                              }]
+                              }'''
+                )
+            }
+        }
+
 
     }
 
