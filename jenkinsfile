@@ -1,5 +1,6 @@
 def IP_SERVIDOR = '192.168.1.11'
 def URL_REPOSITORIO_GIT = "https://github.com/victorio1/facturacion-web-continuous-integration.git"
+def remote = [:]
 
 pipeline{
     agent any
